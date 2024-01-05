@@ -144,17 +144,20 @@ namespace EscapeFromTheWoods.BL.Objects
             for (int j = 0; j < route.Count; j++)
             {
                 records.Add(new DBMonkeyRecord(monkey.monkeyID, monkey.name, woodID, j, route[j].treeID, route[j].x, route[j].y));
-                writeLogsToDB(monkey, route);
+                
                 logEntries.Add(new LogEntry
                 {
                     JumpNumber = jumpNumber,
                     MonkeyName = monkey.name,
+                    MonkeyId = monkey.monkeyID,
                     TreeID = route[j].treeID,
                     X = route[j].x,
                     Y = route[j].y
                 });
                 jumpNumber++;
             }
+            writeLogsToDB(logEntries);
+
             dBWriter.WriteMonkeyRecords(records);
             Console.ForegroundColor = ConsoleColor.DarkGreen;
             Console.WriteLine($"{woodID}:write db routes {woodID},{monkey.name} end");
@@ -176,36 +179,28 @@ namespace EscapeFromTheWoods.BL.Objects
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine($"{woodID}:write db wood {woodID} end");
         }
-        private void writeLogsToDB(Monkey monkey, List<Tree> route)
+        private void writeLogsToDB(List<LogEntry> logEntries)
         {
-            //Console.ForegroundColor = ConsoleColor.Blue;
-            //Console.WriteLine($"{woodID}:write db logs for {monkey.name} start");
+            ////Console.ForegroundColor = ConsoleColor.Blue;
+            ////Console.WriteLine($"{woodID}:write db logs for {monkey.name} start");
 
-            List<DBLogRecord> logRecords = new List<DBLogRecord>();
+            List<DBLogRecord> dbLogRecords = new List<DBLogRecord>();
 
-            for (int j = 0; j < route.Count; j++)
+            foreach (var logEntry in logEntries)
             {
-                string message = $"Monkey {monkey.name} moved to tree {route[j].treeID} at location ({route[j].x}, {route[j].y})";
-                logRecords.Add(new DBLogRecord(
+                string message = $"Monkey {logEntry.MonkeyName} moved to tree {logEntry.TreeID} at location ({logEntry.X}, {logEntry.Y})";
+                dbLogRecords.Add(new DBLogRecord(
                     IDgenerator.GetLogID(),
                     this.woodID,
-                    monkey.monkeyID,
+                    logEntry.MonkeyId,
                     message
                 ));
             }
 
-            string exitMessage = $"Monkey {monkey.name} has left the wood {this.woodID}";
-            logRecords.Add(new DBLogRecord(
-                    IDgenerator.GetLogID(),
-                    this.woodID,
-                    monkey.monkeyID,
-                    exitMessage
-                ));
+            dBWriter.WriteLogRecords(dbLogRecords);
 
-            dBWriter.WriteLogRecords(logRecords);
-
-            //Console.ForegroundColor = ConsoleColor.Blue;
-            //Console.WriteLine($"{woodID}:write db logs for {monkey.name} end");
+            ////Console.ForegroundColor = ConsoleColor.Blue;
+            ////Console.WriteLine($"{woodID}:write db logs for {monkey.name} end");
         }
 
         //Bitmap images

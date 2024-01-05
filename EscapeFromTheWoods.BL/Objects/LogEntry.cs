@@ -8,6 +8,7 @@ namespace EscapeFromTheWoods.BL.Objects
     {
         public int JumpNumber { get; set; }
         public string MonkeyName { get; set; }
+        public int MonkeyId { get; set; }
         public int TreeID { get; set; }
         public int X { get; set; }
         public int Y { get; set; }

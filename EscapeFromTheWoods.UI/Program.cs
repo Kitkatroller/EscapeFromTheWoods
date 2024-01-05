@@ -38,7 +38,7 @@ namespace EscapeFromTheWoods.UI
             w2.PlaceMonkey("Jebus", IDgenerator.GetMonkeyID());
 
             Map m3 = new Map(0, 400, 0, 400);
-            Wood w3 = wBuilder.GetWood(2000, m3);
+            Wood w3 = wBuilder.GetWood(10000, m3);
             w3.PlaceMonkey("Kelly", IDgenerator.GetMonkeyID());
             w3.PlaceMonkey("Kenji", IDgenerator.GetMonkeyID());
             w3.PlaceMonkey("Kobe", IDgenerator.GetMonkeyID());

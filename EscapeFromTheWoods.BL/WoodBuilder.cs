@@ -45,5 +45,4 @@ namespace EscapeFromTheWoods.BL
             return w;
         }
     }
-
 }
