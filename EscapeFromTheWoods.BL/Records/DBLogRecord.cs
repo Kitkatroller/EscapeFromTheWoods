@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace EscapeFromTheWoods.DL.Records
+namespace EscapeFromTheWoods.BL.Records
 {
     public class DBLogRecord
     {
