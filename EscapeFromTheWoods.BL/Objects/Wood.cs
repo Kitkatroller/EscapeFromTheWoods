@@ -11,10 +11,13 @@ namespace EscapeFromTheWoods.BL.Objects
 {
     public class Wood
     {
-        //Database
+        //Database variables
         IMongoDBWriter dBWriter;
+        string bitmapImagesPath;
+        string logFilesPath;
         List<LogEntry> logEntries = new List<LogEntry>();
 
+        //Variables
         private const int drawingFactor = 8;
         public int woodID { get; set; }
         private Random r = new Random(1);        
@@ -24,13 +27,17 @@ namespace EscapeFromTheWoods.BL.Objects
         
 
         //Constructor
-        public Wood(int woodID, Dictionary<int, Tree> trees, Map map, IMongoDBWriter dBWriter)
+        public Wood(int woodID, Dictionary<int, Tree> trees, Map map, IMongoDBWriter dBWriter, string bitmapImagesPath, string logFilesPath)
         {
             this.woodID = woodID;
             this.trees = trees;
             this.monkeys = new List<Monkey>();//Instatiates empty list of monkeys, user adds the monkeys in the program
             this.map = map;
+
+            //Database
             this.dBWriter = dBWriter;
+            this.bitmapImagesPath = bitmapImagesPath;
+            this.logFilesPath = logFilesPath;
         }
 
         //Methods
@@ -49,17 +56,7 @@ namespace EscapeFromTheWoods.BL.Objects
             monkeys.Add(m);
 
             trees[treeNr].hasMonkey = true;
-        }
-        //Adds the escape route for the different monkeys to a list routes
-        public void Escape()
-        {
-            List<List<Tree>> routes = new List<List<Tree>>();
-            foreach (Monkey m in monkeys)
-            {
-                routes.Add(EscapeMonkey(m));
-            }                
-           WriteEscaperoutesToBitmap(routes);           
-        }
+        } 
         //Determines the route the monkey takes to get out of the forest
         public List<Tree> EscapeMonkey(Monkey monkey)
         {
@@ -120,11 +117,21 @@ namespace EscapeFromTheWoods.BL.Objects
                 route.Add(distanceToMonkey.First().Value.First());
                 monkey.tree = distanceToMonkey.First().Value.First();
                 
-                WriteLogToFile(filePath, logEntries);
+                WriteLogToFile(logFilesPath, logEntries);
             }
             while (true);
-        }        
-        
+        }
+        //Adds the escape route for the different monkeys to a list routes
+        public void Escape()
+        {
+            List<List<Tree>> routes = new List<List<Tree>>();
+            foreach (Monkey m in monkeys)
+            {
+                routes.Add(EscapeMonkey(m));
+            }
+            WriteEscaperoutesToBitmap(routes);
+        }
+
         //Datalayer related methods
         //Database
         private void writeRouteToDB(Monkey monkey, List<Tree> route)
@@ -171,8 +178,9 @@ namespace EscapeFromTheWoods.BL.Objects
         }
         private void writeLogsToDB(Monkey monkey, List<Tree> route)
         {
-            Console.ForegroundColor = ConsoleColor.Blue;
-            Console.WriteLine($"{woodID}:write db logs for {monkey.name} start");
+            //Console.ForegroundColor = ConsoleColor.Blue;
+            //Console.WriteLine($"{woodID}:write db logs for {monkey.name} start");
+
             List<DBLogRecord> logRecords = new List<DBLogRecord>();
 
             for (int j = 0; j < route.Count; j++)
@@ -195,8 +203,9 @@ namespace EscapeFromTheWoods.BL.Objects
                 ));
 
             dBWriter.WriteLogRecords(logRecords);
-            Console.ForegroundColor = ConsoleColor.Blue;
-            Console.WriteLine($"{woodID}:write db logs for {monkey.name} end");
+
+            //Console.ForegroundColor = ConsoleColor.Blue;
+            //Console.WriteLine($"{woodID}:write db logs for {monkey.name} end");
         }
 
         //Bitmap images
@@ -204,11 +213,13 @@ namespace EscapeFromTheWoods.BL.Objects
         {
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.WriteLine($"{woodID}:write bitmap routes {woodID} start");
+
             Color[] cvalues = new Color[] { Color.Red, Color.Yellow, Color.Blue, Color.Cyan, Color.GreenYellow };
             Bitmap bm = new Bitmap((map.xmax - map.xmin) * drawingFactor, (map.ymax - map.ymin) * drawingFactor);
             Graphics g = Graphics.FromImage(bm);
             int delta = drawingFactor / 2;
             Pen p = new Pen(Color.Green, 1);
+
             foreach (KeyValuePair<int, Tree> kvp in trees)
             {
                 Tree t = kvp.Value; // Krijg de Tree uit de KeyValuePair
@@ -232,7 +243,8 @@ namespace EscapeFromTheWoods.BL.Objects
                 }
                 colorN++;
             }
-            bm.Save(Path.Combine(path, woodID.ToString() + "_escapeRoutes.jpg"), ImageFormat.Jpeg);
+            bm.Save(Path.Combine(bitmapImagesPath, woodID.ToString() + "_escapeRoutes.jpg"), ImageFormat.Jpeg);
+
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.WriteLine($"{woodID}:write bitmap routes {woodID} end");
         }

@@ -9,23 +9,24 @@ namespace EscapeFromTheWoods.BL
     public class WoodBuilder
     {
         //Initialize database
-        private IMongoDBWriter dBWriter;
+        private IMongoDBWriter dbWriter;
         string bitmapImagesPath;
         string logFilesPath;
 
-        public WoodBuilder(IMongoDBWriter dBWriter, string bitmapImagesPath, string logFilesPath)
+        public WoodBuilder(IMongoDBWriter dbWriter, string bitmapImagesPath, string logFilesPath)
         {
-            this.dBWriter = dBWriter;
+            this.dbWriter = dbWriter;
             this.bitmapImagesPath = bitmapImagesPath;
             this.logFilesPath = logFilesPath;
         }
 
         //Creates a forest "woods" and returns it
-        public static Wood GetWood(int treeAmount, Map map)
+        public Wood GetWood(int treeAmount, Map map)
         {
             //Generates trees on uniek spots accros a map of a certain Mapsize and a certain amount of trees
             Random r = new Random(100);
             Dictionary<int, Tree> trees = new Dictionary<int, Tree>();
+            IDgenerator.resetTreeID();
 
             for (int i = 0; i < treeAmount; i++)
             {
@@ -40,7 +41,7 @@ namespace EscapeFromTheWoods.BL
                 trees.Add(treeID, tree);
             }
 
-            Wood w = new Wood(IDgenerator.GetWoodID(), trees, map, dBWriter);
+            Wood w = new Wood(IDgenerator.GetWoodID(), trees, map, dbWriter, bitmapImagesPath, logFilesPath);
             return w;
         }
     }

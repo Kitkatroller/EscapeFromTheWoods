@@ -26,5 +26,11 @@ namespace EscapeFromTheWoods
         {
             return logID++;
         }
+
+        //methods
+        public static void resetTreeID()
+        {
+            treeID = 0;
+        }
     }
 }
