@@ -20,14 +20,14 @@ namespace EscapeFromTheWoods.BL.Objects
         //Variables
         private const int drawingFactor = 8;
         public int woodID { get; set; }
-        private Random r = new Random(1);        
-        public Dictionary<int, Tree> trees { get; set; }
+        private Random r = new Random(1);
+        public Dictionary<Tree, int> trees { get; set; }
         public List<Monkey> monkeys { get; private set; }
         private Map map;        
         
 
         //Constructor
-        public Wood(int woodID, Dictionary<int, Tree> trees, Map map, IMongoDBWriter dBWriter, string bitmapImagesPath, string logFilesPath)
+        public Wood(int woodID, Dictionary<Tree, int> trees, Map map, IMongoDBWriter dBWriter, string bitmapImagesPath, string logFilesPath)
         {
             this.woodID = woodID;
             this.trees = trees;
@@ -44,19 +44,20 @@ namespace EscapeFromTheWoods.BL.Objects
         //Places a new monkey in a random tree and adds it to the list of monkeys for this wood"forest"
         public void PlaceMonkey(string monkeyName, int monkeyID)
         {
-            int treeNr;
+            Tree selectedTree = null;
             do
             {
-                treeNr = r.Next(0, trees.Count - 1);
+                // Get a random tree key from the dictionary
+                selectedTree = trees.Keys.ElementAt(r.Next(trees.Count));
             }
-            while (trees[treeNr].hasMonkey);//checks if the chosen tree already has a monkey, if so search again for different tree
+            while (selectedTree.hasMonkey); // checks if the chosen tree already has a monkey, if so search again for different tree
 
-            Monkey m = new Monkey(monkeyID, monkeyName, trees[treeNr]);
+            Monkey m = new Monkey(monkeyID, monkeyName, selectedTree);
 
             monkeys.Add(m);
 
-            trees[treeNr].hasMonkey = true;
-        } 
+            selectedTree.hasMonkey = true;
+        }
         //Determines the route the monkey takes to get out of the forest
         public List<Tree> EscapeMonkey(Monkey monkey)
         {
@@ -67,9 +68,9 @@ namespace EscapeFromTheWoods.BL.Objects
             Dictionary<int, bool> visited = new Dictionary<int, bool>();
 
             //Populating the Dictionary with keys from the collection trees
-            foreach (var kvp in trees)
+            foreach (var tree in trees)
             {
-                visited.Add(kvp.Key, false); // Gebruik de Key van de KeyValuePair
+                visited.Add(tree.Value, false); // Gebruik de Key van de KeyValuePair
             }
 
             List<Tree> route = new List<Tree>() { monkey.tree };
@@ -80,9 +81,9 @@ namespace EscapeFromTheWoods.BL.Objects
 
                 SortedList<double, List<Tree>> distanceToMonkey = new SortedList<double, List<Tree>>();
 
-                foreach (var kvp in trees) // Itereer over KeyValuePair
+                foreach (var tree in trees) // Itereer over KeyValuePair
                 {
-                    Tree t = kvp.Value; // Krijg de Tree uit de KeyValuePair
+                    Tree t = tree.Key; // Krijg de Tree uit de KeyValuePair
                     if (!visited[t.treeID] && !t.hasMonkey)//check if its already visited or contains a monkey
                     {
                         double d = Math.Sqrt(Math.Pow(t.x - monkey.tree.x, 2) + Math.Pow(t.y - monkey.tree.y, 2));
@@ -168,9 +169,9 @@ namespace EscapeFromTheWoods.BL.Objects
             Console.WriteLine($"{woodID}:write db wood {woodID} start");
 
             List<DBWoodRecord> records = new List<DBWoodRecord>();
-            foreach (KeyValuePair<int, Tree> kvp in trees)
+            foreach (var tree in trees)
             {
-                Tree t = kvp.Value; // Krijg de Tree uit de KeyValuePair
+                Tree t = tree.Key; 
                 records.Add(new DBWoodRecord(woodID, t.treeID, t.x, t.y));
             }
 
@@ -215,9 +216,9 @@ namespace EscapeFromTheWoods.BL.Objects
             int delta = drawingFactor / 2;
             Pen p = new Pen(Color.Green, 1);
 
-            foreach (KeyValuePair<int, Tree> kvp in trees)
+            foreach (var tree in trees)
             {
-                Tree t = kvp.Value; // Krijg de Tree uit de KeyValuePair
+                Tree t = tree.Key; // Krijg de Tree uit de KeyValuePair
                 g.DrawEllipse(p, t.x * drawingFactor, t.y * drawingFactor, drawingFactor, drawingFactor);
             }
 
