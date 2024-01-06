@@ -23,7 +23,7 @@ namespace EscapeFromTheWoods.BL
         //Creates a forest "woods" and returns it
         public Wood GetWood(int treeAmount, Map map)
         {
-            //Generates trees on uniek spots accros a map of a certain Mapsize and a certain amount of trees
+            //Generates trees on uniek spots accros a map of a certain Mapsize with a certain amount of trees
             Random r = new Random(100);
             Dictionary<int, Tree> trees = new Dictionary<int, Tree>();
             IDgenerator.resetTreeID();
@@ -36,7 +36,7 @@ namespace EscapeFromTheWoods.BL
                 do
                 {
                     tree = new Tree(treeID, r.Next(map.xmin, map.xmax), r.Next(map.ymin, map.ymax));
-                } while (trees.Values.Any(t => t.x == tree.x && t.y == tree.y));
+                } while (trees.ContainsValue(tree));
 
                 trees.Add(treeID, tree);
             }
