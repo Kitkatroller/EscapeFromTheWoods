@@ -22,7 +22,7 @@ namespace EscapeFromTheWoods.UI
             stopwatch.Start();
 
             Map m1 = new Map(0, 500, 0, 500);
-            Wood w1 = wBuilder.GetWood(500, m1);
+            Wood w1 = wBuilder.GetWood(500, m1); //Creates a forest"wood" and writes it to the database
             w1.PlaceMonkey("Alice", IDgenerator.GetMonkeyID());
             w1.PlaceMonkey("Janice", IDgenerator.GetMonkeyID());
             w1.PlaceMonkey("Toby", IDgenerator.GetMonkeyID());
@@ -30,7 +30,7 @@ namespace EscapeFromTheWoods.UI
             w1.PlaceMonkey("Jos", IDgenerator.GetMonkeyID());
 
             Map m2 = new Map(0, 200, 0, 400);
-            Wood w2 = wBuilder.GetWood(2500, m2);
+            Wood w2 = wBuilder.GetWood(2500, m2); //Creates a forest"wood" and writes it to the database
             w2.PlaceMonkey("Tom", IDgenerator.GetMonkeyID());
             w2.PlaceMonkey("Jerry", IDgenerator.GetMonkeyID());
             w2.PlaceMonkey("Tiffany", IDgenerator.GetMonkeyID());
@@ -38,7 +38,7 @@ namespace EscapeFromTheWoods.UI
             w2.PlaceMonkey("Jebus", IDgenerator.GetMonkeyID());
 
             Map m3 = new Map(0, 1000, 0, 1000);
-            Wood w3 = wBuilder.GetWood(20000, m3);
+            Wood w3 = wBuilder.GetWood(20000, m3); //Creates a forest"wood" and writes it to the database
             w3.PlaceMonkey("Kelly", IDgenerator.GetMonkeyID());
             w3.PlaceMonkey("Kenji", IDgenerator.GetMonkeyID());
             w3.PlaceMonkey("Kobe", IDgenerator.GetMonkeyID());
@@ -48,13 +48,13 @@ namespace EscapeFromTheWoods.UI
             //after changes -> 0.009 seconds
 
 
-            //Times to write wood to database
-            w1.WriteWoodToDBAsync();
-            OutputElapsedTimeInRed(stopwatch);
-            w2.WriteWoodToDBAsync();
-            OutputElapsedTimeInRed(stopwatch);
-            w3.WriteWoodToDBAsync();
-            OutputElapsedTimeInRed(stopwatch);
+            ////Times to write wood to database
+            //w1.WriteWoodToDBAsync();
+            //OutputElapsedTimeInRed(stopwatch);
+            //w2.WriteWoodToDBAsync();
+            //OutputElapsedTimeInRed(stopwatch);
+            //w3.WriteWoodToDBAsync();
+            //OutputElapsedTimeInRed(stopwatch);
             //before changes -> around 8 seconds
             //after changes -> less than 3 seconds
 

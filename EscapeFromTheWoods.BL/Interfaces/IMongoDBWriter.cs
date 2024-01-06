@@ -10,10 +10,8 @@ namespace EscapeFromTheWoods.BL.Interfaces
 {
     public interface IMongoDBWriter
     {
+        Task WriteWoodToDBAsync(Tree tree, int woodId);
         void WriteMonkeyRecords(List<DBMonkeyRecord> data);
-        void WriteWoodRecord(DBWoodRecord record);
-        void WriteLogRecords(List<DBLogRecord> data);
-        void WriteLogRecord(DBLogRecord data);
         void WriteLogRecord(LogEntry logEntry);
     }
 }

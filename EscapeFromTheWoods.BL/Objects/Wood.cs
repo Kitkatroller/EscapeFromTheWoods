@@ -38,6 +38,8 @@ namespace EscapeFromTheWoods.BL.Objects
             this.dBWriter = dBWriter;
             this.bitmapImagesPath = bitmapImagesPath;
             this.logFilesPath = logFilesPath;
+
+            WriteWoodToDBAsync();
         }
 
         //Methods
@@ -135,80 +137,58 @@ namespace EscapeFromTheWoods.BL.Objects
 
         //Datalayer related methods
         //Database
+        private async Task WriteWoodToDBAsync()
+        {
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"{woodID}:write db wood {woodID} start");
+
+            var semaphore = new SemaphoreSlim(5);
+
+            var tasks = new List<Task>();
+            foreach (var tree in trees.Keys)
+            {
+                await semaphore.WaitAsync();
+                tasks.Add(dBWriter.WriteWoodToDBAsync(tree, woodID).ContinueWith(t => semaphore.Release()));
+            }
+
+            await Task.WhenAll(tasks);
+
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"{woodID}:write db wood {woodID} end");
+        }
         private void writeRouteToDB(Monkey monkey, List<Tree> route)
         {
             Console.ForegroundColor = ConsoleColor.DarkGreen;
             Console.WriteLine($"{woodID}:write db routes {woodID},{monkey.name} start");
 
-            List<DBMonkeyRecord> records = new List<DBMonkeyRecord>();
+            List<DBMonkeyRecord> monkeyRecords = new List<DBMonkeyRecord>();
             int jumpNumber = 1;
             for (int j = 0; j < route.Count; j++)
             {
-                records.Add(new DBMonkeyRecord(monkey.monkeyID, monkey.name, woodID, j, route[j].treeID, route[j].x, route[j].y));
-                
-                logEntries.Add(new LogEntry
+                monkeyRecords.Add(new DBMonkeyRecord(monkey.monkeyID, monkey.name, woodID, j, route[j].treeID, route[j].x, route[j].y));                      
+               
+                LogEntry logEntry = new LogEntry
                 {
                     JumpNumber = jumpNumber,
                     MonkeyName = monkey.name,
                     MonkeyId = monkey.monkeyID,
                     TreeID = route[j].treeID,
+                    WoodId = this.woodID,
                     X = route[j].x,
                     Y = route[j].y
-                });
+                };
+
+                dBWriter.WriteLogRecord(logEntry); //Sends to dbWriter to be mapped and saved to MongoDB
+                logEntries.Add(logEntry); //Sends to a list to later be sorted by the jumpnumber and then be written to a .txt file
+
                 jumpNumber++;
             }
-            writeLogsToDB(logEntries);
-
-            dBWriter.WriteMonkeyRecords(records);
+           
+            dBWriter.WriteMonkeyRecords(monkeyRecords);
 
             Console.ForegroundColor = ConsoleColor.DarkGreen;
             Console.WriteLine($"{woodID}:write db routes {woodID},{monkey.name} end");
-        }
-        public async Task WriteWoodToDBAsync()
-        {
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine($"{woodID}:write db wood {woodID} start");
-
-            List<Task> tasks = new List<Task>();
-            foreach (var tree in trees)
-            {
-                Tree t = tree.Key;
-                var record = new DBWoodRecord(woodID, t.treeID, t.x, t.y);
-
-                // Create a task for each database write operation
-                var task = Task.Run(() => dBWriter.WriteWoodRecord(record));
-                tasks.Add(task);
-            }
-
-            // Wait for all tasks to complete
-            await Task.WhenAll(tasks);
-
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine($"{woodID}:write db wood {woodID} end");
-        }                
-        private void writeLogsToDB(List<LogEntry> logEntries)
-        {
-            ////Console.ForegroundColor = ConsoleColor.Blue;
-            ////Console.WriteLine($"{woodID}:write db logs for {monkey.name} start");
-
-            List<DBLogRecord> dbLogRecords = new List<DBLogRecord>();
-
-            foreach (var logEntry in logEntries)
-            {
-                string message = $"Monkey {logEntry.MonkeyName} moved to tree {logEntry.TreeID} at location ({logEntry.X}, {logEntry.Y})";
-                dbLogRecords.Add(new DBLogRecord(
-                    IDgenerator.GetLogID(),
-                    this.woodID,
-                    logEntry.MonkeyId,
-                    message
-                ));
-            }
-            dBWriter.
-            dBWriter.WriteLogRecords(dbLogRecords);
-
-            ////Console.ForegroundColor = ConsoleColor.Blue;
-            ////Console.WriteLine($"{woodID}:write db logs for {monkey.name} end");
-        }
+        }  
 
         //Bitmap images
         public void WriteEscaperoutesToBitmap(List<List<Tree>> routes)
@@ -258,7 +238,6 @@ namespace EscapeFromTheWoods.BL.Objects
             string fullPath = Path.Combine(filePath, fileName);
 
             var sortedLogEntries = logEntries.OrderBy(entry => entry.JumpNumber).ThenBy(entry => entry.MonkeyName);
-
 
             using (StreamWriter file = new StreamWriter(fullPath))
             {

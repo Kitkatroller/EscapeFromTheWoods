@@ -5,6 +5,8 @@ using MongoDB.Driver;
 using EscapeFromTheWoods.BL.Records;
 using EscapeFromTheWoods.BL.Interfaces;
 using EscapeFromTheWoods.BL.Objects;
+using EscapeFromTheWoods.DL.Mappers;
+using SharpCompress.Writers;
 
 namespace EscapeFromTheWoods.MongoDB
 {
@@ -18,6 +20,20 @@ namespace EscapeFromTheWoods.MongoDB
             this.database = client.GetDatabase("EscapeFromTheWoodsDB");
         }
 
+        public async Task WriteWoodToDBAsync(Tree tree, int woodId)
+        {
+            try
+            {
+                var record = new DBWoodRecord(woodId, tree.treeID, tree.x, tree.y);
+                var collection = database.GetCollection<DBWoodRecord>("woods");
+                await collection.InsertOneAsync(record);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error writing record to database: {ex.Message}");
+            }
+        }
+
         public void WriteMonkeyRecords(List<DBMonkeyRecord> data)
         {
             var collection = database.GetCollection<DBMonkeyRecord>("monkeys");
@@ -27,48 +43,17 @@ namespace EscapeFromTheWoods.MongoDB
             }
         }
 
-        public void WriteWoodRecord(DBWoodRecord record)
-        {
-            try
-            {
-                var collection = database.GetCollection<DBWoodRecord>("woods");
-                collection.InsertOne(record);
-            }
-            catch (Exception ex)
-            {
-                // Handle exceptions here
-                Console.WriteLine($"Error writing record to database: {ex.Message}");
-            }
-        }
-
-
-        public void WriteLogRecords(List<DBLogRecord> data)
-        {
-            var collection = database.GetCollection<DBLogRecord>("Logs");
-            foreach (var record in data)
-            {
-                collection.InsertOne(record);
-            }
-        }
-
-        public void WriteLogRecord(DBLogRecord logEntry)
+        public void WriteLogRecord(LogEntry logEntry)
         {
             try
             {
                 var collection = database.GetCollection<DBLogRecord>("Logs");
-
-                // Directly insert the single log record
-                collection.InsertOne(logEntry);
+                collection.InsertOne(LogRecordMapper.MapToDBLogRecord(logEntry));
             }
             catch (Exception ex)
             {
-                // Handle the exception
-                // This could be logging the error, rethrowing the exception, or other appropriate actions
                 Console.WriteLine($"An error occurred while writing the log record: {ex.Message}");
-                // Optionally rethrow to allow higher-level handling
-                // throw;
             }
         }
-
     }
 }

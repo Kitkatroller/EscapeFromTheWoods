@@ -13,7 +13,6 @@
   <ItemGroup>
     <Folder Include="LogFiles\" />
     <Folder Include="BitMapImages\" />
-    <Folder Include="Mappers\" />
   </ItemGroup>
 
   <ItemGroup>
