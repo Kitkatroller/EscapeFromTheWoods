@@ -31,7 +31,7 @@ namespace EscapeFromTheWoods.BL.Objects
         {
             this.woodID = woodID;
             this.trees = trees;
-            this.monkeys = new List<Monkey>();//Instatiates empty list of monkeys, user adds the monkeys in the program
+            this.monkeys = new List<Monkey>();//Instantiates empty list of monkeys, user adds the monkeys in the program
             this.map = map;
 
             //Database
@@ -58,7 +58,7 @@ namespace EscapeFromTheWoods.BL.Objects
 
             selectedTree.hasMonkey = true;
         }
-        //Determines the route the monkey takes to get out of the forest
+        //Determines the quikest route the monkey takes to get out of the forest
         public List<Tree> EscapeMonkey(Monkey monkey)
         {
             Console.ForegroundColor = ConsoleColor.White;
@@ -160,26 +160,32 @@ namespace EscapeFromTheWoods.BL.Objects
             writeLogsToDB(logEntries);
 
             dBWriter.WriteMonkeyRecords(records);
+
             Console.ForegroundColor = ConsoleColor.DarkGreen;
             Console.WriteLine($"{woodID}:write db routes {woodID},{monkey.name} end");
         }
-        public void WriteWoodToDB()
+        public async Task WriteWoodToDBAsync()
         {
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine($"{woodID}:write db wood {woodID} start");
 
-            List<DBWoodRecord> records = new List<DBWoodRecord>();
+            List<Task> tasks = new List<Task>();
             foreach (var tree in trees)
             {
-                Tree t = tree.Key; 
-                records.Add(new DBWoodRecord(woodID, t.treeID, t.x, t.y));
+                Tree t = tree.Key;
+                var record = new DBWoodRecord(woodID, t.treeID, t.x, t.y);
+
+                // Create a task for each database write operation
+                var task = Task.Run(() => dBWriter.WriteWoodRecord(record));
+                tasks.Add(task);
             }
 
-            dBWriter.WriteWoodRecords(records);
+            // Wait for all tasks to complete
+            await Task.WhenAll(tasks);
 
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine($"{woodID}:write db wood {woodID} end");
-        }
+        }                
         private void writeLogsToDB(List<LogEntry> logEntries)
         {
             ////Console.ForegroundColor = ConsoleColor.Blue;
@@ -197,7 +203,7 @@ namespace EscapeFromTheWoods.BL.Objects
                     message
                 ));
             }
-
+            dBWriter.
             dBWriter.WriteLogRecords(dbLogRecords);
 
             ////Console.ForegroundColor = ConsoleColor.Blue;

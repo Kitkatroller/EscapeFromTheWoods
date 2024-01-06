@@ -4,6 +4,7 @@ using System.Text;
 using MongoDB.Driver;
 using EscapeFromTheWoods.BL.Records;
 using EscapeFromTheWoods.BL.Interfaces;
+using EscapeFromTheWoods.BL.Objects;
 
 namespace EscapeFromTheWoods.MongoDB
 {
@@ -26,14 +27,20 @@ namespace EscapeFromTheWoods.MongoDB
             }
         }
 
-        public void WriteWoodRecords(List<DBWoodRecord> data)
+        public void WriteWoodRecord(DBWoodRecord record)
         {
-            var collection = database.GetCollection<DBWoodRecord>("woods");
-            foreach (var record in data)
+            try
             {
+                var collection = database.GetCollection<DBWoodRecord>("woods");
                 collection.InsertOne(record);
             }
+            catch (Exception ex)
+            {
+                // Handle exceptions here
+                Console.WriteLine($"Error writing record to database: {ex.Message}");
+            }
         }
+
 
         public void WriteLogRecords(List<DBLogRecord> data)
         {
@@ -43,5 +50,25 @@ namespace EscapeFromTheWoods.MongoDB
                 collection.InsertOne(record);
             }
         }
+
+        public void WriteLogRecord(DBLogRecord logEntry)
+        {
+            try
+            {
+                var collection = database.GetCollection<DBLogRecord>("Logs");
+
+                // Directly insert the single log record
+                collection.InsertOne(logEntry);
+            }
+            catch (Exception ex)
+            {
+                // Handle the exception
+                // This could be logging the error, rethrowing the exception, or other appropriate actions
+                Console.WriteLine($"An error occurred while writing the log record: {ex.Message}");
+                // Optionally rethrow to allow higher-level handling
+                // throw;
+            }
+        }
+
     }
 }

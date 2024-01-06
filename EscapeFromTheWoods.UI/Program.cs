@@ -44,14 +44,19 @@ namespace EscapeFromTheWoods.UI
             w3.PlaceMonkey("Kobe", IDgenerator.GetMonkeyID());
             w3.PlaceMonkey("Kendra", IDgenerator.GetMonkeyID());
             OutputElapsedTimeInRed(stopwatch); //Time to create woods and place monkeys
+            //before changes -> around 5 seconds
+            //after changes -> 0.009 seconds
+
 
             //Times to write wood to database
-            w1.WriteWoodToDB();
+            w1.WriteWoodToDBAsync();
             OutputElapsedTimeInRed(stopwatch);
-            w2.WriteWoodToDB();
+            w2.WriteWoodToDBAsync();
             OutputElapsedTimeInRed(stopwatch);
-            w3.WriteWoodToDB();
+            w3.WriteWoodToDBAsync();
             OutputElapsedTimeInRed(stopwatch);
+            //before changes -> around 8 seconds
+            //after changes -> less than 3 seconds
 
             //times to calculate and write escape routes to db
             w1.Escape();
