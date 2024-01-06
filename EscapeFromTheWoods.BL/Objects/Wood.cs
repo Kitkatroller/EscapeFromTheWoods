@@ -6,6 +6,7 @@ using System.Drawing.Imaging;
 using System.Drawing;
 using EscapeFromTheWoods.BL.Interfaces;
 using EscapeFromTheWoods.BL.Records;
+using System.Diagnostics;
 
 namespace EscapeFromTheWoods.BL.Objects
 {
@@ -37,9 +38,7 @@ namespace EscapeFromTheWoods.BL.Objects
             //Database
             this.dBWriter = dBWriter;
             this.bitmapImagesPath = bitmapImagesPath;
-            this.logFilesPath = logFilesPath;
-
-            WriteWoodToDBAsync();
+            this.logFilesPath = logFilesPath;           
         }
 
         //Methods
@@ -49,10 +48,10 @@ namespace EscapeFromTheWoods.BL.Objects
             Tree selectedTree = null;
             do
             {
-                // Get a random tree key from the dictionary
+                //Gets a random tree key from trees
                 selectedTree = trees.Keys.ElementAt(r.Next(trees.Count));
             }
-            while (selectedTree.hasMonkey); // checks if the chosen tree already has a monkey, if so search again for different tree
+            while (selectedTree.hasMonkey); //Checks if the chosen tree already has a monkey, if so search again for different tree
 
             Monkey m = new Monkey(monkeyID, monkeyName, selectedTree);
 
@@ -64,80 +63,79 @@ namespace EscapeFromTheWoods.BL.Objects
         public List<Tree> EscapeMonkey(Monkey monkey)
         {
             Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine($"{woodID}:start {woodID},{monkey.name}");
+            Console.WriteLine($"{woodID}:start escape from wood with Id: {woodID},{monkey.name}");
 
-            //Keeps track of the trees a monkey has visited
             Dictionary<int, bool> visited = new Dictionary<int, bool>();
+            List<Tree> treeList = new List<Tree>(trees.Keys);
 
-            //Populating the Dictionary with keys from the collection trees
-            foreach (var tree in trees)
+            foreach (var tree in treeList)
             {
-                visited.Add(tree.Value, false); // Gebruik de Key van de KeyValuePair
+                visited[tree.treeID] = false;
             }
 
             List<Tree> route = new List<Tree>() { monkey.tree };
 
-            do
+            while (true)
             {
                 visited[monkey.tree.treeID] = true;
 
-                SortedList<double, List<Tree>> distanceToMonkey = new SortedList<double, List<Tree>>();
+                Tree closestTree = null;
+                double minDistanceSq = double.MaxValue;
 
-                foreach (var tree in trees) // Itereer over KeyValuePair
+                foreach (Tree t in treeList)
                 {
-                    Tree t = tree.Key; // Krijg de Tree uit de KeyValuePair
-                    if (!visited[t.treeID] && !t.hasMonkey)//check if its already visited or contains a monkey
+                    if (!visited[t.treeID] && !t.hasMonkey)
                     {
-                        double d = Math.Sqrt(Math.Pow(t.x - monkey.tree.x, 2) + Math.Pow(t.y - monkey.tree.y, 2));
-                        if (!distanceToMonkey.ContainsKey(d))
+                        double dSq = (t.x - monkey.tree.x) * (t.x - monkey.tree.x) +
+                                     (t.y - monkey.tree.y) * (t.y - monkey.tree.y);
+                        if (dSq < minDistanceSq)
                         {
-                            distanceToMonkey[d] = new List<Tree>();
+                            minDistanceSq = dSq;
+                            closestTree = t;
                         }
-                        distanceToMonkey[d].Add(t);
                     }
                 }
 
-                //distance to border            
-                //noord oost zuid west
                 double distanceToBorder = (new List<double>(){ map.ymax - monkey.tree.y,
-                map.xmax - monkey.tree.x,monkey.tree.y-map.ymin,monkey.tree.x-map.xmin }).Min();
-                
-                if (distanceToMonkey.Count == 0)
+            map.xmax - monkey.tree.x,monkey.tree.y - map.ymin,monkey.tree.x - map.xmin }).Min();
+
+                if (closestTree == null || distanceToBorder < Math.Sqrt(minDistanceSq))
                 {
-                    writeRouteToDB(monkey, route);
-                    Console.ForegroundColor = ConsoleColor.White;
-                    Console.WriteLine($"{woodID}:end {woodID},{monkey.name}");
-                    return route;
-                }
-                if (distanceToBorder < distanceToMonkey.First().Key)
-                {
-                    writeRouteToDB(monkey, route);
                     Console.ForegroundColor = ConsoleColor.White;
                     Console.WriteLine($"{woodID}:end {woodID},{monkey.name}");
                     return route;
                 }
 
-                route.Add(distanceToMonkey.First().Value.First());
-                monkey.tree = distanceToMonkey.First().Value.First();
-                
-                WriteLogToFile(logFilesPath, logEntries);
+                route.Add(closestTree);
+                monkey.tree = closestTree;
             }
-            while (true);
         }
+
         //Adds the escape route for the different monkeys to a list routes
-        public void Escape()
+        public async Task Escape()
         {
-            List<List<Tree>> routes = new List<List<Tree>>();
-            foreach (Monkey m in monkeys)
+            try
             {
-                routes.Add(EscapeMonkey(m));
+                List<List<Tree>> routes = new List<List<Tree>>();
+                foreach (Monkey m in monkeys)
+                {
+                    List<Tree> route = EscapeMonkey(m);
+                    routes.Add(route);
+                    await WriteRouteToDBAsync(m, route);
+                }
+                await WriteEscaperoutesToBitmapAsync(routes);
+                await WriteLogToFileAsync(logFilesPath, logEntries);
             }
-            WriteEscaperoutesToBitmap(routes);
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in Escape: {ex.Message}");
+            }
         }
+
 
         //Datalayer related methods
         //Database
-        private async Task WriteWoodToDBAsync()
+        public async Task WriteWoodToDBAsync()
         {
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine($"{woodID}:write db wood {woodID} start");
@@ -156,83 +154,97 @@ namespace EscapeFromTheWoods.BL.Objects
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine($"{woodID}:write db wood {woodID} end");
         }
-        private void writeRouteToDB(Monkey monkey, List<Tree> route)
+        private async Task WriteRouteToDBAsync(Monkey monkey, List<Tree> route)
         {
             Console.ForegroundColor = ConsoleColor.DarkGreen;
             Console.WriteLine($"{woodID}:write db routes {woodID},{monkey.name} start");
 
-            List<DBMonkeyRecord> monkeyRecords = new List<DBMonkeyRecord>();
-            int jumpNumber = 1;
-            for (int j = 0; j < route.Count; j++)
+            List<Task> logWriteTasks = new List<Task>();
+
+            for (int jumpNumber = 0; jumpNumber < route.Count; jumpNumber++)
             {
-                monkeyRecords.Add(new DBMonkeyRecord(monkey.monkeyID, monkey.name, woodID, j, route[j].treeID, route[j].x, route[j].y));                      
+                await dBWriter.WriteMonkeyRecordAsync(monkey, woodID, jumpNumber, route);
                
                 LogEntry logEntry = new LogEntry
                 {
                     JumpNumber = jumpNumber,
                     MonkeyName = monkey.name,
                     MonkeyId = monkey.monkeyID,
-                    TreeID = route[j].treeID,
+                    TreeID = route[jumpNumber].treeID,
                     WoodId = this.woodID,
-                    X = route[j].x,
-                    Y = route[j].y
+                    X = route[jumpNumber].x,
+                    Y = route[jumpNumber].y
                 };
-
-                dBWriter.WriteLogRecord(logEntry); //Sends to dbWriter to be mapped and saved to MongoDB
-                logEntries.Add(logEntry); //Sends to a list to later be sorted by the jumpnumber and then be written to a .txt file
-
-                jumpNumber++;
+                                
+                var logWriteTask = dBWriter.WriteLogRecordAsync(logEntry);
+                logWriteTasks.Add(logWriteTask);
+                logEntries.Add(logEntry);
             }
-           
-            dBWriter.WriteMonkeyRecords(monkeyRecords);
+
+            // Wait for all log write tasks to complete
+            await Task.WhenAll(logWriteTasks);
 
             Console.ForegroundColor = ConsoleColor.DarkGreen;
             Console.WriteLine($"{woodID}:write db routes {woodID},{monkey.name} end");
-        }  
+        }
 
         //Bitmap images
-        public void WriteEscaperoutesToBitmap(List<List<Tree>> routes)
+        private async Task WriteEscaperoutesToBitmapAsync(List<List<Tree>> routes)
         {
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.WriteLine($"{woodID}:write bitmap routes {woodID} start");
 
             Color[] cvalues = new Color[] { Color.Red, Color.Yellow, Color.Blue, Color.Cyan, Color.GreenYellow };
-            Bitmap bm = new Bitmap((map.xmax - map.xmin) * drawingFactor, (map.ymax - map.ymin) * drawingFactor);
-            Graphics g = Graphics.FromImage(bm);
-            int delta = drawingFactor / 2;
-            Pen p = new Pen(Color.Green, 1);
-
-            foreach (var tree in trees)
+            using (Bitmap bm = new Bitmap((map.xmax - map.xmin) * drawingFactor, (map.ymax - map.ymin) * drawingFactor))
+            using (Graphics g = Graphics.FromImage(bm))
             {
-                Tree t = tree.Key; // Krijg de Tree uit de KeyValuePair
-                g.DrawEllipse(p, t.x * drawingFactor, t.y * drawingFactor, drawingFactor, drawingFactor);
-            }
+                int delta = drawingFactor / 2;
+                Pen p = new Pen(Color.Green, 1);
 
-            int colorN = 0;
-            foreach (List<Tree> route in routes)
-            {
-                int p1x = route[0].x * drawingFactor + delta;
-                int p1y = route[0].y * drawingFactor + delta;
-                Color color = cvalues[colorN % cvalues.Length];
-                Pen pen = new Pen(color, 1);
-                g.DrawEllipse(pen, p1x - delta, p1y - delta, drawingFactor, drawingFactor);
-                g.FillEllipse(new SolidBrush(color), p1x - delta, p1y - delta, drawingFactor, drawingFactor);
-                for (int i = 1; i < route.Count; i++)
+                foreach (var tree in trees)
                 {
-                    g.DrawLine(pen, p1x, p1y, route[i].x * drawingFactor + delta, route[i].y * drawingFactor + delta);
-                    p1x = route[i].x * drawingFactor + delta;
-                    p1y = route[i].y * drawingFactor + delta;
+                    Tree t = tree.Key;
+                    g.DrawEllipse(p, t.x * drawingFactor, t.y * drawingFactor, drawingFactor, drawingFactor);
                 }
-                colorN++;
+
+                int colorN = 0;
+                foreach (List<Tree> route in routes)
+                {
+                    int p1x = route[0].x * drawingFactor + delta;
+                    int p1y = route[0].y * drawingFactor + delta;
+                    Color color = cvalues[colorN % cvalues.Length];
+                    using (Pen pen = new Pen(color, 1))
+                    {
+                        g.DrawEllipse(pen, p1x - delta, p1y - delta, drawingFactor, drawingFactor);
+                        g.FillEllipse(new SolidBrush(color), p1x - delta, p1y - delta, drawingFactor, drawingFactor);
+                        for (int i = 1; i < route.Count; i++)
+                        {
+                            g.DrawLine(pen, p1x, p1y, route[i].x * drawingFactor + delta, route[i].y * drawingFactor + delta);
+                            p1x = route[i].x * drawingFactor + delta;
+                            p1y = route[i].y * drawingFactor + delta;
+                        }
+                    }
+                    colorN++;
+                }
+
+                string filePath = Path.Combine(bitmapImagesPath, woodID.ToString() + "_escapeRoutes.jpg");
+                using (var memoryStream = new MemoryStream())
+                {
+                    bm.Save(memoryStream, ImageFormat.Jpeg);
+                    memoryStream.Position = 0;
+                    using (var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 4096, useAsync: true))
+                    {
+                        await memoryStream.CopyToAsync(fileStream);
+                    }
+                }
             }
-            bm.Save(Path.Combine(bitmapImagesPath, woodID.ToString() + "_escapeRoutes.jpg"), ImageFormat.Jpeg);
 
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.WriteLine($"{woodID}:write bitmap routes {woodID} end");
         }
 
         //LogFiles
-        public void WriteLogToFile(string filePath, List<LogEntry> logEntries)
+        private async Task WriteLogToFileAsync(string filePath, List<LogEntry> logEntries)
         {
             string fileName = "log" + woodID + ".txt";
             string fullPath = Path.Combine(filePath, fileName);
@@ -243,9 +255,10 @@ namespace EscapeFromTheWoods.BL.Objects
             {
                 foreach (var entry in sortedLogEntries)
                 {
-                    file.WriteLine(entry.ToString());
+                    await file.WriteLineAsync(entry.ToString());
                 }
             }
         }
+
     }
 }

@@ -34,25 +34,31 @@ namespace EscapeFromTheWoods.MongoDB
             }
         }
 
-        public void WriteMonkeyRecords(List<DBMonkeyRecord> data)
+        public async Task WriteMonkeyRecordAsync(Monkey monkey, int woodId, int jumpNumber, List<Tree> route)
         {
             var collection = database.GetCollection<DBMonkeyRecord>("monkeys");
-            foreach (var record in data)
+
+            try
             {
-                collection.InsertOne(record);
+                await collection.InsertOneAsync(MonkeyRecordMapper.MapToDBMonkeyRecord(monkey, woodId, jumpNumber, route));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error writing record to database: {ex.Message}");
             }
         }
 
-        public void WriteLogRecord(LogEntry logEntry)
+        public async Task WriteLogRecordAsync(LogEntry logEntry)
         {
             try
             {
                 var collection = database.GetCollection<DBLogRecord>("Logs");
-                collection.InsertOne(LogRecordMapper.MapToDBLogRecord(logEntry));
+                var dbLogRecord = LogRecordMapper.MapToDBLogRecord(logEntry);
+                await collection.InsertOneAsync(dbLogRecord);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"An error occurred while writing the log record: {ex.Message}");
+                Console.WriteLine($"An error occurred while writing the log record asynchronously: {ex.Message}");
             }
         }
     }

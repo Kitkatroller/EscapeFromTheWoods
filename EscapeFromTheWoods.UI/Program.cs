@@ -8,7 +8,7 @@ namespace EscapeFromTheWoods.UI
 {
     class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             //Initialize Database and woodBuilder
             string connectionString = @"mongodb://localhost:27017";
@@ -48,22 +48,22 @@ namespace EscapeFromTheWoods.UI
             //after changes -> 0.009 seconds
 
 
-            ////Times to write wood to database
-            //w1.WriteWoodToDBAsync();
-            //OutputElapsedTimeInRed(stopwatch);
-            //w2.WriteWoodToDBAsync();
-            //OutputElapsedTimeInRed(stopwatch);
-            //w3.WriteWoodToDBAsync();
-            //OutputElapsedTimeInRed(stopwatch);
+            //Times to write wood to database
+            await w1.WriteWoodToDBAsync();
+            OutputElapsedTimeInRed(stopwatch);
+            await w2.WriteWoodToDBAsync();
+            OutputElapsedTimeInRed(stopwatch);
+            await w3.WriteWoodToDBAsync();
+            OutputElapsedTimeInRed(stopwatch);
             //before changes -> around 8 seconds
-            //after changes -> less than 3 seconds
+            //after changes->less than 3 seconds
 
             //times to calculate and write escape routes to db
-            w1.Escape();
+            await w1.Escape();
             OutputElapsedTimeInRed(stopwatch);
-            w2.Escape();
+            await w2.Escape();
             OutputElapsedTimeInRed(stopwatch);
-            w3.Escape();
+            await w3.Escape();
             OutputElapsedTimeInRed(stopwatch);
 
             stopwatch.Stop();
