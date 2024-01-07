@@ -56,7 +56,7 @@ namespace EscapeFromTheWoods.UI
             await w3.WriteWoodToDBAsync();
             OutputElapsedTimeInRed(stopwatch);
             //before changes -> around 8 seconds
-            //after changes->less than 3 seconds
+            //after changes->less than 0.009 seconds
 
             //times to calculate and write escape routes to db
             await w1.Escape();

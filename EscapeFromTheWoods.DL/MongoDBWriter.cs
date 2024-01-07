@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using MongoDB.Driver;
-using EscapeFromTheWoods.BL.Records;
+using EscapeFromTheWoods.DL.Records;
 using EscapeFromTheWoods.BL.Interfaces;
 using EscapeFromTheWoods.BL.Objects;
 using EscapeFromTheWoods.DL.Mappers;

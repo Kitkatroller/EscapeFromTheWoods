@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using EscapeFromTheWoods.BL.Objects;
-using EscapeFromTheWoods.BL.Records;
 
 namespace EscapeFromTheWoods.BL.Interfaces
 {

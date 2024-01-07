@@ -5,7 +5,6 @@ using System.IO;
 using System.Drawing.Imaging;
 using System.Drawing;
 using EscapeFromTheWoods.BL.Interfaces;
-using EscapeFromTheWoods.BL.Records;
 using System.Diagnostics;
 
 namespace EscapeFromTheWoods.BL.Objects
@@ -110,7 +109,6 @@ namespace EscapeFromTheWoods.BL.Objects
                 monkey.tree = closestTree;
             }
         }
-
         //Adds the escape route for the different monkeys to a list routes
         public async Task Escape()
         {
@@ -140,20 +138,14 @@ namespace EscapeFromTheWoods.BL.Objects
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine($"{woodID}:write db wood {woodID} start");
 
-            var semaphore = new SemaphoreSlim(5);
-
-            var tasks = new List<Task>();
-            foreach (var tree in trees.Keys)
-            {
-                await semaphore.WaitAsync();
-                tasks.Add(dBWriter.WriteWoodToDBAsync(tree, woodID).ContinueWith(t => semaphore.Release()));
-            }
+            var tasks = trees.Keys.Select(tree => dBWriter.WriteWoodToDBAsync(tree, woodID)).ToList();
 
             await Task.WhenAll(tasks);
 
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine($"{woodID}:write db wood {woodID} end");
         }
+
         private async Task WriteRouteToDBAsync(Monkey monkey, List<Tree> route)
         {
             Console.ForegroundColor = ConsoleColor.DarkGreen;
